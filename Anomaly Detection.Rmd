@@ -1,0 +1,107 @@
+# **ANOMALY DETECTION**
+
+## **Objective**
+
+To check whether there are any anomalies in the given sales dataset.
+
+## **Context**
+
+The dataset contains sales data collected over a period of four months in 2019.The task is to detect if there are any anomalies in the sales totals
+
+## **Loading libraries**
+
+```{r}
+library(tidyverse)
+library(anomalize)
+```
+
+##**Loading and Previewing data**
+```{r}
+sales_df <- read.csv("http://bit.ly/CarreFourSalesDataset")
+```
+**First 6 records**
+```{r}
+rmarkdown::paged_table(head(sales_df, n=5))
+```
+
+**Last 6 records** 
+```{r}
+rmarkdown::paged_table(tail(sales_df, n=5))
+```
+
+**Dataset Dimension**
+```{r}
+#The data has 1000 records and 2 features
+dim(sales_df)
+```
+
+**Data types**
+```{r}
+sapply(sales_df,class)
+```
+```{r}
+sales_df$Date <- as.Date(sales_df$Date, "%m/%d/%y")
+sapply(sales_df,class)
+```
+
+**Column names**
+```{r}
+colnames(sales_df)
+```
+## **Data Cleaning**
+**Duplicates**
+```{r}
+#Checking for duplicated records
+sum(duplicated(sales_df))
+#The dataset has no duplicates
+```
+**Missing Values**
+```{r}
+#Checking for missing values
+colSums(is.na(sales_df))
+#The dataset has no missing values
+```
+**Outliers**
+```{r}
+#Checking for outliers
+boxplot(sales_df$Sales)
+```
+**Distribution**
+```{r}
+#Checking the distribution of the sales column
+qqnorm(sales_df$Sales,main = "Sales Distribution")
+qqline(sales_df$Sales, lwd=2.5,col="red")
+#The sales column datapoint are normaly distributed
+```
+```{r}
+sales_df <- sales_df %>% 
+  group_by(Date) %>% 
+  tally()
+colnames(sales_df) <- c('Date','Total_Sales')
+head(sales_df)
+```
+## **Detecting Anomalies**
+```{r}
+anomalized<-sales_df %>%
+    time_decompose(Total_Sales) %>%
+    anomalize(remainder) %>%
+    time_recompose() %>%
+    plot_anomalies(ncol = 3, alpha_dots = 2.5)
+anomalized
+```
+
+
+```{r}
+anomalized<-sales_df %>%
+    time_decompose(Total_Sales, merge = TRUE) %>%
+    anomalize(remainder) %>%
+    time_recompose() %>%
+    plot_anomaly_decomposition() +
+  ggtitle("Anomaly Distribution")
+anomalized
+```
+```
+
+**Summary:**
+
+There are no anomalies detected

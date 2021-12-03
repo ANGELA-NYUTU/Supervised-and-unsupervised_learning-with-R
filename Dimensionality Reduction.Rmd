@@ -1,0 +1,192 @@
+# **Dimensionality Reduction**
+
+## **Objective**
+
+To apply PCA and feature selection techniques
+
+## **Context**
+
+The dataset has aquired from CarreFour supermarket chains. It contains customers data on their shopping habits. The dataset has 1000 records and 16 features
+
+##**Loading and Previewing data**
+```{r}
+market_df <- read.csv("http://bit.ly/CarreFourDataset")
+```
+**First 6 records**
+```{r}
+rmarkdown::paged_table(head(market_df, n=5))
+```
+
+**Last 6 records** 
+```{r}
+rmarkdown::paged_table(tail(market_df , n=5))
+```
+
+**Dataset Dimension**
+```{r}
+dim(market_df)
+```
+
+**Data types**
+```{r}
+sapply(market_df,class)
+```
+**Column names**
+```{r}
+colnames(market_df)
+```
+## **Data Cleaning**
+**Duplicates**
+```{r}
+#Checking for duplicated records
+sum(duplicated(market_df))
+#There are no duplicated values in the dataset
+```
+**Missing Values**
+```{r}
+#Checking for missing values
+colSums(is.na(market_df))
+#The dataset has no missing values
+```
+**Outliers**
+```{r}
+#Checking for outliers
+#Selecting numerical columns
+num <- market_df[,sapply(market_df,is.numeric)]
+boxplot(num)
+```
+**Correcting column names**
+```{r}
+#Unifying column names to appear in upper case
+names(market_df) <- toupper(names(market_df))
+colnames(market_df)
+```
+## **Exploratory Data Analysis**
+### **Univariate Analysis**
+```{r}
+#Measures of central tendency
+mean<-summary(market_df[,sapply(market_df,is.numeric)])
+as.matrix(mean)
+```
+```{r}
+x<-table(market_df$BRANCH)
+barplot(x,main= "Dristibution of Branches",xlab="Branch")
+#Equal data was sourced from different branches of the supermarket   
+```
+```{r}
+x<-table(market_df$CUSTOMER.TYPE)
+pie(x, main = "Distribution of Customer Type")
+```
+```{r}
+x<-table(market_df$GENDER)
+pie(x,main="Gender Distribution")
+```
+```{r}
+library(ggplot2)
+ggplot(market_df,aes(PRODUCT.LINE,fill=PRODUCT.LINE),
+       title(main="Distribution of Products",xlab = "Products"))+
+  geom_bar()
+```
+```{r}
+#Checking the distribution of the Tax column
+qqnorm(market_df$TAX,main = "Tax Distribution",xlab = "Distribution",ylab="Values")
+qqline(market_df$TAX, col = "red", lwd = 2.5)
+#the values are polynomially distributed i.e the distribution is normal
+```
+```{r}
+#Checking the distribution of the unit price column
+qqnorm(market_df$UNIT.PRICE,main = "Unit Price Distribution",xlab = "Distribution",ylab="Values")
+qqline(market_df$UNIT.PRICE,col="red",lwd=2.5)
+# the column is normaly distributed
+```
+```{r}
+qqnorm(market_df$GROSS.INCOME,main = "Gross Income Distribution",xlab = "Distribution",ylab="Values")
+qqline(market_df$GROSS.INCOME, col="red",lwd=2.5)
+```
+### **Bivariate Analysis**
+```{r}
+library("ggplot2")
+ggplot(market_df,aes(GENDER,fill=PRODUCT.LINE))+
+  ggtitle("Distribution of Products")+
+  geom_bar()
+```
+```{r}
+ggplot(market_df,aes(BRANCH,fill=PRODUCT.LINE))+
+  ggtitle("Distribution of Products")+
+  geom_bar()
+
+```
+```{r}
+ggplot(market_df,aes(QUANTITY,fill=PRODUCT.LINE))+
+  ggtitle("Distribution of Products")+
+  geom_bar()
+```
+```{r}
+plot(market_df$TAX,market_df$TOTAL,xlab = "Tax",ylab = "Total Income",main="Association between Tax and Total Income",col = "red")
+```
+```{r}
+plot(market_df$GROSS.INCOME,market_df$TOTAL,xlab = "Gross Income",ylab = "Total Income",main="Association between Gross Income and Total Income",col = "red")
+```
+```{r}
+plot(market_df$COGS,market_df$TOTAL,xlab = "Cost of Goods Sold",ylab = "Total Income",main="Association between Cost of Goods Sold and Total Income",col = "red")
+```
+## **Dimensionality Reduction**
+### **Principal Component Analysis Technique**
+```{r}
+#Data prep: selecting numerical columns since PCA work only with continuous data
+pca_df<-market_df[,sapply(market_df,is.numeric)]
+pca_df
+```
+```{r}
+#Checking the correlation
+x=pca_df[,c(1,2,3,4,6,7)]
+corr<-cor(x)
+```
+```{r}
+#Scaling the data 
+pca_df1 <-scale(x)
+pca_df1
+```
+
+```{r}
+#Applying PCA
+component1 <- prcomp(pca_df1)
+summary(component1)
+#PC1 explains the 65.5% of the variation.
+#pc1 to PC4 cumulatively explains 98.5% variance.
+```
+```{r}
+#Plotting the variances explained by different components
+plot(component1)
+```
+**Summary:** PC1 to PC3 are sufficient components in modeling as the can be attributted to up to 98.6% variance
+
+### **Feature Selection Technique**
+**Filtering Method**
+```{r}
+library(caret)
+library(corrplot)
+```
+
+```{r}
+#Checking highly corrilated columns
+highcor <- findCorrelation(corr, cutoff=0.75)
+highcor
+names(x[,highcor])
+#Tax and COGS columns are highly correlated
+```
+
+
+```{r}
+#Dropping highly corrilated columns
+new_df<-x[-highcor]
+new_df
+```
+```{r}
+#Plotting corrilations to observe how coorilations have changed after dropping the highly corrilated columns
+par(mfrow = c(1, 2))
+corrplot(corr, order = "hclust")
+corrplot(cor(new_df), order = "hclust")
+```
+**Summary**: Filtering method during feature reduction is computationally simple that using PCA reduction technique
+

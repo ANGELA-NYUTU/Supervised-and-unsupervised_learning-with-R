@@ -1,0 +1,101 @@
+# **ASSOCIATION ANALYSIS**
+
+## **Objective**
+
+To create association rules that will allow you to identify relationships between variables in the dataset.
+
+## **Context**
+
+The dataset contains data of items bought by different customers. The project aims to create a model using association rule to predictitem purchasing behaviors
+
+## **Loading libraries**
+```{r}
+library(arules)
+```
+##**Loading and Previewing data**
+```{r}
+url <-"http://bit.ly/SupermarketDatasetII"
+order<-read.transactions(url, sep = ",")
+```
+**First 6 records**
+```{r}
+orders<-as.data.frame(itemLabels(order))
+colnames(orders) <- "Item"
+head(orders, 6)
+```
+**First 6 orders**
+```{r}
+inspect(order[1:6])
+```
+
+**Last 6 records** 
+```{r}
+orders<-as.data.frame(itemLabels(order))
+colnames(orders) <- "Item"
+tail(orders, 6)
+```
+
+**Dataset Dimension**
+```{r}
+dim(order)
+```
+
+**Data types**
+```{r}
+class(order)
+```
+
+## **Data Cleaning**
+**Duplicates**
+```{r}
+#Checking for duplicated records
+sum(duplicated(order))
+#dropping duplicates
+order<-order[!duplicated(order)]
+order
+```
+## **Exploratory Data Analysis**
+```{r}
+summary(order)
+#Most frequently purchased items are mineral water, spaghetti,eggs,chocolate and french fries
+```
+```{r}
+#Displaying the top ten most purchased items.
+itemFrequencyPlot(order, type = "absolute",topN=10,col=rainbow(10),main = "Most Purchased Items")
+```
+## **Building Model**
+```{r}
+#Applying the arules algorithim with 80% confidence level
+model<- apriori (order, parameter = list(supp = 0.001, conf = 0.8))
+#A model with 247 rules is created
+model
+```
+```{r}
+#Describing the model
+summary(model)
+#The model has a minimum of three items and a maximum of six items
+```
+```{r}
+#Showing the first five record and the predicted items likely to be bought
+inspect(model[1:5])
+# A person who buys bugers,hand protein bar has the likelihood of 85.7% of buying mineral water
+```
+
+```{r}
+#sorting by confidence level
+model<-sort(model, by="confidence", decreasing=TRUE)
+inspect(model[1:5])
+#A person buying nonfat milk and soup is 100% likely to buy mineral water
+
+```
+```{r}
+#Predicting items likely to be bought buy a customer who has pick mineral water as an item
+`mineral water` <- subset(model, subset = lhs %pin% "mineral water")
+
+# Order by confidence
+`mineral water`<-sort(`mineral water`, by="confidence", decreasing=TRUE)
+
+# inspect top 10
+inspect(`mineral water`[1:10])
+```
+
